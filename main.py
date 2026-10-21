@@ -1,7 +1,7 @@
 def main():
     print("Hello from ml-product-management!")
     print("Hello, World!")
-    print("12345678")
+    print("123456789")
 
 
 if __name__ == "__main__":
