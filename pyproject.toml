@@ -1,7 +1,44 @@
 [project]
 name = "ml-product-management"
 version = "0.1.0"
-description = "Add your description here"
+description = "project for ml product management course"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
+
+[dependency-groups]
+dev = [
+    "mypy==1.18.2",
+    "pre-commit==4.3.0",
+    "ruff==0.14.10",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.0,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 99
+target-version = "py312"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "UP", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+mypy_path = "src"
+files = ["src"]
+exclude = [
+    '\.venv/',
+    '__pycache__/',
+    '\.mypy_cache/',
+    '\.ruff_cache/',
+    'build/',
+    'dist/',
+]
