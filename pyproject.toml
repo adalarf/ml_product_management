@@ -4,14 +4,40 @@ version = "0.1.0"
 description = "project for ml product management course"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "boto3==1.43.123",
+    "numpy==2.5.4",
+    "pillow==13.0.0",
+    "pyyaml==6.0.3",
+    "torch==2.15.0",
+    "torchvision==0.29.2",
+]
 
 [dependency-groups]
 dev = [
+    "boto3-stubs[s3]==1.43.123",
     "mypy==1.18.2",
     "pre-commit==4.3.0",
     "ruff==0.14.10",
+    "types-pyyaml==6.0.12.20261103",
 ]
+
+[project.scripts]
+mlpm-ingest = "ml_product_management.s3.ingest:main"
+mlpm-download-from-s3 = "ml_product_management.s3.download_from_s3:main"
+mlpm-convert-to-safe = "ml_product_management.data.convert_to_safe:main"
+mlpm-partitioning = "ml_product_management.data.partitioning:main"
+mlpm-stats = "ml_product_management.data.stats:main"
+mlpm-export-to-s3 = "ml_product_management.s3.export_to_s3:main"
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [build-system]
 requires = ["uv_build>=0.8.0,<0.9.0"]

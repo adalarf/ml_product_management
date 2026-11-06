@@ -1,0 +1,16 @@
+# ключ сырого архива в бакете: сюда кладёт ingest, отсюда скачивает download-from-s3
+raw_object_key: raw/cifar-10-python.tar.gz
+
+ingest:
+  url: https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+  timeout: 60  # таймаут сети, секунды
+
+
+partitioning:
+  val_size: 5000
+  seed: 42
+
+export:
+  version: v1
+  prefix: processed/cifar10
+  workers: 32
