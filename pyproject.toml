@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "boto3==1.43.123",
+    "mlflow-skinny==3.16.0",
     "numpy==2.5.4",
     "pillow==13.0.0",
     "pyyaml==6.0.3",
@@ -29,6 +30,8 @@ mlpm-convert-to-safe = "ml_product_management.data.convert_to_safe:main"
 mlpm-partitioning = "ml_product_management.data.partitioning:main"
 mlpm-stats = "ml_product_management.data.stats:main"
 mlpm-export-to-s3 = "ml_product_management.s3.export_to_s3:main"
+mlpm-train = "ml_product_management.training.train:main"
+mlpm-experiments = "ml_product_management.training.experiments:main"
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]

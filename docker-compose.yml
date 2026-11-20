@@ -1,7 +1,6 @@
 services:
   rustfs:
     image: rustfs/rustfs:1.0.4
-    container_name: rustfs
     restart: unless-stopped
     ports:
       - "${S3_PORT:-9000}:9000"
@@ -29,12 +28,89 @@ services:
       AWS_DEFAULT_REGION: ${S3_REGION}
       S3_ENDPOINT_URL: ${S3_INTERNAL_ENDPOINT_URL}
       S3_BUCKET: ${S3_BUCKET}
+      MLFLOW_BUCKET: ${MLFLOW_BUCKET:-mlflow}
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        aws --endpoint-url "$$S3_ENDPOINT_URL" s3api head-bucket --bucket "$$S3_BUCKET" 2>/dev/null \
-          || aws --endpoint-url "$$S3_ENDPOINT_URL" s3api create-bucket --bucket "$$S3_BUCKET"
+        set -eu
+        for bucket in "$$S3_BUCKET" "$$MLFLOW_BUCKET"; do
+          aws --endpoint-url "$$S3_ENDPOINT_URL" s3api head-bucket --bucket "$$bucket" 2>/dev/null \
+            || aws --endpoint-url "$$S3_ENDPOINT_URL" s3api create-bucket --bucket "$$bucket"
+        done
     restart: "no"
+
+  postgres:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mlflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-mlflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: docker/mlflow.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      create-bucket:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${MLFLOW_PORT:-5000}:5000"
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-mlflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mlflow}
+      MLFLOW_ARTIFACTS_DESTINATION: s3://${MLFLOW_BUCKET:-mlflow}/
+      MLFLOW_S3_ENDPOINT_URL: ${S3_INTERNAL_ENDPOINT_URL}
+      MLFLOW_SERVER_ALLOWED_HOSTS: mlflow:5000,localhost:*,127.0.0.1:*
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    command: ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000", "--serve-artifacts"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+  trainer:
+    profiles: ["training"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    environment:
+      S3_ENDPOINT_URL: ${S3_INTERNAL_ENDPOINT_URL}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLPM_CACHE_DIR: /cache
+      MLPM_OUTPUT_DIR: /app/artifacts
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - training_cache:/cache
+      - ./artifacts:/app/artifacts
 
 volumes:
   rustfs_data:
+  postgres_data:
+  training_cache:
