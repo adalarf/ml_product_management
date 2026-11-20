@@ -1,0 +1,18 @@
+experiment_name: cifar10-hw3
+run_name: cnn
+seed: 42
+data:
+  s3_path: processed/cifar10/v1
+  max_train_samples: 10000
+  workers: 16
+model:
+  type: simple_cnn
+  params:
+    channels: [32, 64]
+    hidden: 128
+train:
+  epochs: 5
+  batch_size: 128
+  lr: 0.001
+  cpu_threads: 4
+  num_workers: 0

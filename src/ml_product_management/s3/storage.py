@@ -42,6 +42,10 @@ class S3Storage:
     def uri(self, key: str) -> str:
         return f"s3://{self.bucket}/{key}"
 
+    @property
+    def endpoint_url(self) -> str:
+        return self._client.meta.endpoint_url
+
     def exists(self, key: str) -> bool:
         try:
             self._client.head_object(Bucket=self.bucket, Key=key)

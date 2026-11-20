@@ -1,0 +1,9 @@
+# Пути относительно этого файла.
+base: simple_cnn.yaml
+baseline: baseline.yaml
+grid:
+  train.lr: [0.0003, 0.001, 0.003]
+  train.batch_size: [64, 128]
+final:
+  data.max_train_samples: null
+  train.epochs: 15
