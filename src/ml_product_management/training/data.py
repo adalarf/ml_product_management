@@ -45,7 +45,6 @@ def fetch_checked(
 
 def download_dataset(storage: S3Storage, prefix: str, cache: Path, workers: int) -> Path:
     prefix = safe_relative(prefix).rstrip("/") + "/"
-    # Include endpoint identity: two independent S3 servers may use the same bucket/version.
     identity = hashlib.sha256(
         f"{storage.endpoint_url}|{storage.uri(prefix)}".encode()
     ).hexdigest()[:16]

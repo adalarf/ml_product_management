@@ -19,7 +19,7 @@ def safe_name(value: str) -> str:
 
 def safe_relative(value: str) -> str:
     path = PurePosixPath(value)
-    if not value or path.is_absolute() or ".." in path.parts or "\\" in value:
+    if not value or path.is_absolute() or ".." in path.parts or "\\" in value or ":" in value:
         raise PipelineError(f"Ожидается относительный S3-путь: {value!r}")
     return str(path)
 

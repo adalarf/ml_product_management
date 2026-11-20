@@ -73,6 +73,8 @@ services:
       MLFLOW_ARTIFACTS_DESTINATION: s3://${MLFLOW_BUCKET:-mlflow}/
       MLFLOW_S3_ENDPOINT_URL: ${S3_INTERNAL_ENDPOINT_URL}
       MLFLOW_SERVER_ALLOWED_HOSTS: mlflow:5000,localhost:*,127.0.0.1:*
+      MLFLOW_ENABLE_PROXY_MULTIPART_DOWNLOAD: "false"
+      MLFLOW_ENABLE_PROXY_MULTIPART_UPLOAD: "false"
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
       AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
@@ -106,6 +108,7 @@ services:
       MLPM_CACHE_DIR: /cache
       MLPM_OUTPUT_DIR: /app/artifacts
       PYTHONUNBUFFERED: "1"
+      GIT_PYTHON_REFRESH: quiet
     volumes:
       - training_cache:/cache
       - ./artifacts:/app/artifacts

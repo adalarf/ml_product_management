@@ -22,7 +22,7 @@ from ml_product_management.training.config import (
     flatten_params,
 )
 from ml_product_management.training.data import ImageDataset, download_dataset, stratified_subset
-from ml_product_management.training.engine import Evaluation, fit
+from ml_product_management.training.engine import Evaluation, evaluate, fit
 from ml_product_management.training.experiments import (
     container_command,
     expand_grid,
@@ -149,6 +149,16 @@ class DataTests(unittest.TestCase):
 
 
 class TrainingTests(unittest.TestCase):
+    def test_evaluation_weights_uneven_batches_by_image_count(self):
+        logits = torch.tensor([[2.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 5.0, 0.0]])
+        labels = torch.tensor([0, 1, 0])
+        loader = DataLoader(TensorDataset(logits, labels), batch_size=2)
+        result = evaluate(nn.Identity(), loader, 3)
+        expected_loss = float(nn.functional.cross_entropy(logits, labels).item())
+        self.assertAlmostEqual(result.metrics.loss, expected_loss, places=6)
+        self.assertAlmostEqual(result.metrics.accuracy, 2 / 3)
+        np.testing.assert_array_equal(result.confusion, [[1, 1, 0], [0, 1, 0], [0, 0, 0]])
+
     def test_metrics_include_absent_classes_and_weight_loss_by_samples(self):
         matrix = np.array([[2, 1, 0], [0, 1, 0], [0, 0, 0]], dtype=np.int64)
         metrics = from_confusion(8.0, matrix)
@@ -229,6 +239,10 @@ class TrainingTests(unittest.TestCase):
 
 class OrchestrationTests(unittest.TestCase):
     def test_config_validation_and_flattening(self):
+        with self.assertRaises(PipelineError):
+            RunConfig.from_dict(
+                {"experiment_name": "ok", "run_name": "ok", "data": {"s3_path": "C:/outside"}}
+            )
         with self.assertRaises(PipelineError):
             RunConfig.from_dict({"experiment_name": "../bad", "run_name": "ok"})
         with self.assertRaises(PipelineError):
